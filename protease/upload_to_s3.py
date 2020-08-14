@@ -34,9 +34,16 @@ def upload_dry_run(uploads: List[Upload]):
         )
 
 
-# TODO set naming convention here
-def get_object_name(file_name: str) -> str:
-    return file_name
+def _remove_prefix(text: str, prefix: str) -> str:
+    if text.startswith(prefix):
+        return text[len(prefix) :]
+    return text
+
+
+def get_object_key(file_name: str, strip_file_prefix: str, key_prefix: str) -> str:
+    base_name = _remove_prefix(file_name, strip_file_prefix)
+    key_name = base_name  # TODO change naming convention here
+    return f"{key_prefix}/{key_name}"
 
 
 def normalize_object_name(name: str) -> str:
@@ -44,18 +51,33 @@ def normalize_object_name(name: str) -> str:
 
 
 def main(
-    *files: str, bucket: str, prefix: str = "./", dry_run: bool = True,
+    *files: str,
+    bucket: str,
+    strip_file_prefix: str,
+    key_prefix: str = "",
+    dry_run: bool = True,
 ):
 
-    if normalize_object_name(prefix) != prefix:
+    if normalize_object_name(key_prefix) != key_prefix:
         raise ValueError(
-            f"Expected a normalized prefix, but got '{prefix}'. "
-            f"Maybe '{normalize_object_name(prefix)}'?"
+            f"Expected a normalized key for prefix, but got '{key_prefix}'. "
+            f"Maybe '{normalize_object_name(key_prefix)}'?"
         )
 
     upload = upload_dry_run if dry_run else upload_to_s3
 
-    upload([Upload(f, bucket, get_object_name(f)) for f in files])
+    upload(
+        [
+            Upload(
+                f,
+                bucket,
+                get_object_key(
+                    f, strip_file_prefix=strip_file_prefix, key_prefix=key_prefix
+                ),
+            )
+            for f in files
+        ]
+    )
 
 
 if __name__ == "__main__":
