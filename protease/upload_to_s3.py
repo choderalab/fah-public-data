@@ -46,7 +46,7 @@ def get_object_key(file_name: str, strip_file_prefix: str, key_prefix: str) -> s
     return f"{key_prefix}/{key_name}"
 
 
-def normalize_object_name(name: str) -> str:
+def normalize_object_key(name: str) -> str:
     return name.replace(" ", "_")
 
 
@@ -58,10 +58,10 @@ def main(
     dry_run: bool = True,
 ):
 
-    if normalize_object_name(key_prefix) != key_prefix:
+    if normalize_object_key(key_prefix) != key_prefix:
         raise ValueError(
             f"Expected a normalized key for prefix, but got '{key_prefix}'. "
-            f"Maybe '{normalize_object_name(key_prefix)}'?"
+            f"Maybe '{normalize_object_key(key_prefix)}'?"
         )
 
     upload = upload_dry_run if dry_run else upload_to_s3
