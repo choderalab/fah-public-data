@@ -1,6 +1,7 @@
 import boto3
 from botocore.exceptions import ClientError
 from dataclasses import dataclass
+import functools
 import logging
 from tqdm.auto import tqdm
 from typing import List
@@ -13,8 +14,9 @@ class Upload:
     dest_object: str
 
 
-def upload_to_s3(uploads: List[Upload]):
-    s3_client = boto3.client("s3")
+def upload_to_s3(session: boto3.Session, uploads: List[Upload]):
+    s3_client = session.client("s3")
+
     for upload in tqdm(uploads):
         try:
             s3_client.upload_file(
@@ -56,6 +58,7 @@ def main(
     strip_file_prefix: str,
     key_prefix: str = "",
     dry_run: bool = True,
+    profile: str = "default",
 ):
 
     if normalize_object_key(key_prefix) != key_prefix:
@@ -64,7 +67,13 @@ def main(
             f"Maybe '{normalize_object_key(key_prefix)}'?"
         )
 
-    upload = upload_dry_run if dry_run else upload_to_s3
+    upload = (
+        upload_dry_run
+        if dry_run
+        else functools.partial(
+            upload_to_s3, boto3.session.Session(profile_name=profile)
+        )
+    )
 
     upload(
         [
